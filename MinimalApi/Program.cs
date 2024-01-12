@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using MinimalApi;
 using MinimalApi.Context;
+using MinimalApi.Dto;
 using MinimalApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -31,19 +33,25 @@ app.Run();
 
 static async Task<IResult> GetAllTransactions(RepositoryContext context)
 {
-    return TypedResults.Ok(await context.Transactions.ToListAsync());
+    return TypedResults.Ok(await context.Transactions
+        .Select(t => TransactionItemDto.From(t))
+        .ToListAsync());
 }
 
 static async Task<IResult> GetIncomeTransactions(RepositoryContext context)
 {
-    return TypedResults.Ok(await context.Transactions.Where(t => t.TransactionType == MinimalApi.TransactionType.Income)
+    return TypedResults.Ok(await context.Transactions
+        .Where(t => t.TransactionType == TransactionType.Income)
+        .Select(t => TransactionItemDto.From(t))
         .ToListAsync());
 }
 
 static async Task<IResult> GetOutcomeTransactions(RepositoryContext context)
 {
     return TypedResults.Ok(await context.Transactions
-        .Where(t => t.TransactionType == MinimalApi.TransactionType.Outcome).ToListAsync());
+        .Where(t => t.TransactionType == TransactionType.Outcome)
+        .Select(t => TransactionItemDto.From(t))
+        .ToListAsync());
 }
 
 static async Task<IResult> GetTransaction(int id, RepositoryContext context)
@@ -51,22 +59,29 @@ static async Task<IResult> GetTransaction(int id, RepositoryContext context)
     var transaction = await context.Transactions.FindAsync(id);
     if (transaction is not null)
     {
-        return TypedResults.Ok(transaction);
+        return TypedResults.Ok(TransactionItemDto.From(transaction));
     }
 
     return TypedResults.NotFound();
 }
 
-static async Task<IResult> CreateTransaction(Transaction transaction, RepositoryContext context)
+static async Task<IResult> CreateTransaction(CreateTransactionDto transactionDto, RepositoryContext context)
 {
-    context.Transactions.Add(transaction);
+    var transactionItem = new Transaction
+    {
+        Summary = transactionDto.Summary,
+        Amount = transactionDto.Amount,
+        TransactionType = transactionDto.TransactionTypeId
+    };
+
+    context.Transactions.Add(transactionItem);
     await context.SaveChangesAsync();
 
-    var location = $"/transactions/{transaction.Id}";
-    return TypedResults.Created(location, transaction);
+    var location = $"/transactions/{transactionItem.Id}";
+    return TypedResults.Created(location, transactionItem);
 }
 
-static async Task<IResult> UpdateTransaction(int id, Transaction updateTransaction, RepositoryContext context)
+static async Task<IResult> UpdateTransaction(int id, UpdateTransactionDto updateTransactionDto, RepositoryContext context)
 {
     var transaction = await context.Transactions.FindAsync(id);
     if (transaction is null)
@@ -74,9 +89,7 @@ static async Task<IResult> UpdateTransaction(int id, Transaction updateTransacti
         return TypedResults.NotFound();
     }
 
-    transaction.Summary = updateTransaction.Summary;
-    transaction.Amount = updateTransaction.Amount;
-    transaction.TransactionType = updateTransaction.TransactionType;
+    transaction.Summary = updateTransactionDto.Summary;
 
     await context.SaveChangesAsync();
 
