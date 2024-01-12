@@ -9,42 +9,69 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 var app = builder.Build();
 
-app.MapGet("/", () => "Hello World!");
+app.MapGet("/", () => "Minimal API");
 
 var transactionsRoutes = app.MapGroup("/transactions");
 
-transactionsRoutes.MapGet("/", async (RepositoryContext context) => await context.Transactions.ToListAsync());
+transactionsRoutes.MapGet("/", GetAllTransactions);
 
-transactionsRoutes.MapGet("/income", async (RepositoryContext context) => await context.Transactions.Where(t => t.TransactionType == MinimalApi.TransactionType.Income).ToListAsync());
+transactionsRoutes.MapGet("/income", GetIncomeTransactions);
 
-transactionsRoutes.MapGet("/outcome", async (RepositoryContext context) => await context.Transactions.Where(t => t.TransactionType == MinimalApi.TransactionType.Outcome).ToListAsync());
+transactionsRoutes.MapGet("/outcome", GetOutcomeTransactions);
 
-transactionsRoutes.MapGet("/{id}", async (int id, RepositoryContext context) =>
+transactionsRoutes.MapGet("/{id}", GetTransaction);
+
+transactionsRoutes.MapPost("/", CreateTransaction);
+
+transactionsRoutes.MapPut("/{id}", UpdateTransaction);
+
+transactionsRoutes.MapDelete("/{id}", DeleteTransaction);
+
+app.Run();
+
+static async Task<IResult> GetAllTransactions(RepositoryContext context)
+{
+    return TypedResults.Ok(await context.Transactions.ToListAsync());
+}
+
+static async Task<IResult> GetIncomeTransactions(RepositoryContext context)
+{
+    return TypedResults.Ok(await context.Transactions.Where(t => t.TransactionType == MinimalApi.TransactionType.Income)
+        .ToListAsync());
+}
+
+static async Task<IResult> GetOutcomeTransactions(RepositoryContext context)
+{
+    return TypedResults.Ok(await context.Transactions
+        .Where(t => t.TransactionType == MinimalApi.TransactionType.Outcome).ToListAsync());
+}
+
+static async Task<IResult> GetTransaction(int id, RepositoryContext context)
 {
     var transaction = await context.Transactions.FindAsync(id);
     if (transaction is not null)
     {
-        return Results.Ok(transaction);
+        return TypedResults.Ok(transaction);
     }
 
-    return Results.NotFound();
-});
+    return TypedResults.NotFound();
+}
 
-transactionsRoutes.MapPost("/", async (Transaction transaction, RepositoryContext context) =>
+static async Task<IResult> CreateTransaction(Transaction transaction, RepositoryContext context)
 {
     context.Transactions.Add(transaction);
     await context.SaveChangesAsync();
 
     var location = $"/transactions/{transaction.Id}";
-    return Results.Created(location, transaction);
-});
+    return TypedResults.Created(location, transaction);
+}
 
-transactionsRoutes.MapPut("/{id}", async (int id, Transaction updateTransaction, RepositoryContext context) =>
+static async Task<IResult> UpdateTransaction(int id, Transaction updateTransaction, RepositoryContext context)
 {
     var transaction = await context.Transactions.FindAsync(id);
     if (transaction is null)
     {
-        return Results.NotFound();
+        return TypedResults.NotFound();
     }
 
     transaction.Summary = updateTransaction.Summary;
@@ -53,20 +80,18 @@ transactionsRoutes.MapPut("/{id}", async (int id, Transaction updateTransaction,
 
     await context.SaveChangesAsync();
 
-    return Results.NoContent();
-});
+    return TypedResults.NoContent();
+}
 
-transactionsRoutes.MapDelete("/{id}", async (int id, RepositoryContext context) =>
+static async Task<IResult> DeleteTransaction(int id, RepositoryContext context)
 {
     if (await context.Transactions.FindAsync(id) is Transaction transaction)
     {
         context.Transactions.Remove(transaction);
         await context.SaveChangesAsync();
 
-        return Results.NoContent();
+        return TypedResults.NoContent();
     }
 
-    return Results.NotFound();
-});
-
-app.Run();
+    return TypedResults.NotFound();
+}
