@@ -11,13 +11,15 @@ var app = builder.Build();
 
 app.MapGet("/", () => "Hello World!");
 
-app.MapGet("/transactions", async (RepositoryContext context) => await context.Transactions.ToListAsync());
+var transactionsRoutes = app.MapGroup("/transactions");
 
-app.MapGet("/transactions/income", async (RepositoryContext context) => await context.Transactions.Where(t => t.TransactionType == MinimalApi.TransactionType.Income).ToListAsync());
+transactionsRoutes.MapGet("/", async (RepositoryContext context) => await context.Transactions.ToListAsync());
 
-app.MapGet("/transactions/outcome", async (RepositoryContext context) => await context.Transactions.Where(t => t.TransactionType == MinimalApi.TransactionType.Outcome).ToListAsync());
+transactionsRoutes.MapGet("/income", async (RepositoryContext context) => await context.Transactions.Where(t => t.TransactionType == MinimalApi.TransactionType.Income).ToListAsync());
 
-app.MapGet("/transactions/{id}", async (int id, RepositoryContext context) =>
+transactionsRoutes.MapGet("/outcome", async (RepositoryContext context) => await context.Transactions.Where(t => t.TransactionType == MinimalApi.TransactionType.Outcome).ToListAsync());
+
+transactionsRoutes.MapGet("/{id}", async (int id, RepositoryContext context) =>
 {
     var transaction = await context.Transactions.FindAsync(id);
     if (transaction is not null)
@@ -28,7 +30,7 @@ app.MapGet("/transactions/{id}", async (int id, RepositoryContext context) =>
     return Results.NotFound();
 });
 
-app.MapPost("/transactions", async (Transaction transaction, RepositoryContext context) =>
+transactionsRoutes.MapPost("/", async (Transaction transaction, RepositoryContext context) =>
 {
     context.Transactions.Add(transaction);
     await context.SaveChangesAsync();
@@ -37,7 +39,7 @@ app.MapPost("/transactions", async (Transaction transaction, RepositoryContext c
     return Results.Created(location, transaction);
 });
 
-app.MapPut("/transactions/{id}", async (int id, Transaction updateTransaction, RepositoryContext context) =>
+transactionsRoutes.MapPut("/{id}", async (int id, Transaction updateTransaction, RepositoryContext context) =>
 {
     var transaction = await context.Transactions.FindAsync(id);
     if (transaction is null)
@@ -54,7 +56,7 @@ app.MapPut("/transactions/{id}", async (int id, Transaction updateTransaction, R
     return Results.NoContent();
 });
 
-app.MapDelete("/transactions/{id}", async (int id, RepositoryContext context) =>
+transactionsRoutes.MapDelete("/{id}", async (int id, RepositoryContext context) =>
 {
     if (await context.Transactions.FindAsync(id) is Transaction transaction)
     {
