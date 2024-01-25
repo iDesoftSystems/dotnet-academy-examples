@@ -1,8 +1,8 @@
 ﻿namespace MinimalApi.Dto;
 
-public class CreateTransactionDto
+public record CreateTransactionDto
 {
-    public string? Summary { get; set; }
-    public double Amount { get; set; }
-    public TransactionType TransactionTypeId { get; set; }
+    public string? Summary { get; init; }
+    public double Amount { get; init; }
+    public TransactionType TransactionTypeId { get; init; }
 }

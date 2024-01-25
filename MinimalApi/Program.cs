@@ -1,33 +1,64 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.OpenApi;
 using MinimalApi;
 using MinimalApi.Context;
 using MinimalApi.Dto;
 using MinimalApi.Models;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<RepositoryContext>(opt => opt.UseInMemoryDatabase("SimpleDB"));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 var app = builder.Build();
 
-app.MapGet("/", () => "Minimal API");
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.MapGet("/", () => "Minimal API").WithOpenApi(operation => new(operation)
+{
+    Deprecated = true,
+    Tags = [new() { Name = "Root" }],
+}); ;
 
 var transactionsRoutes = app.MapGroup("/transactions");
 
 transactionsRoutes.MapGet("/", GetAllTransactions);
 
-transactionsRoutes.MapGet("/income", GetIncomeTransactions);
+transactionsRoutes.MapGet("/income", GetIncomeTransactions)
+    .WithOpenApi(operation => new(operation)
+    {
+        Summary = "Get only income transactions",
+        Description = "Full description about income transactions",
+    });
 
-transactionsRoutes.MapGet("/outcome", GetOutcomeTransactions);
+transactionsRoutes.MapGet("/outcome", GetOutcomeTransactions)
+    .WithOpenApi();
 
-transactionsRoutes.MapGet("/{id}", GetTransaction);
+transactionsRoutes.MapGet("/{id}", GetTransaction)
+    .WithOpenApi(generatedOperation =>
+    {
+        var parameter = generatedOperation.Parameters[0];
+        parameter.Description = "The ID associated with created transaction";
+        return generatedOperation;
+    }
+    );
 
-transactionsRoutes.MapPost("/", CreateTransaction);
+transactionsRoutes.MapPost("/", CreateTransaction)
+    .WithOpenApi();
 
-transactionsRoutes.MapPut("/{id}", UpdateTransaction);
+transactionsRoutes.MapPut("/{id}", UpdateTransaction)
+    .WithOpenApi();
 
-transactionsRoutes.MapDelete("/{id}", DeleteTransaction);
+transactionsRoutes.MapDelete("/{id}", DeleteTransaction)
+    .WithOpenApi();
 
 app.Run();
 
@@ -54,7 +85,7 @@ static async Task<IResult> GetOutcomeTransactions(RepositoryContext context)
         .ToListAsync());
 }
 
-static async Task<IResult> GetTransaction(int id, RepositoryContext context)
+static async Task<Results<Ok<TransactionItemDto>, NotFound>> GetTransaction(int id, RepositoryContext context)
 {
     var transaction = await context.Transactions.FindAsync(id);
     if (transaction is not null)

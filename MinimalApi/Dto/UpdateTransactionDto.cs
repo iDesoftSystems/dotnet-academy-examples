@@ -1,6 +1,6 @@
-﻿namespace MinimalApi;
+﻿namespace MinimalApi.Dto;
 
-public class UpdateTransactionDto
+public record UpdateTransactionDto
 {
-    public string? Summary;
+    public string? Summary { get; init; }
 }
