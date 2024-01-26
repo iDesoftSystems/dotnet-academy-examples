@@ -1,4 +1,4 @@
-﻿namespace MinimalApi.Dto;
+﻿namespace MinimalApi.Transactions.Dto;
 
 public record CreateTransactionDto
 {

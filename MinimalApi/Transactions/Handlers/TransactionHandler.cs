@@ -1,23 +1,22 @@
-using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MinimalApi.Context;
-using MinimalApi.Dto;
-using MinimalApi.Models;
+using MinimalApi.Transactions.Dto;
+using MinimalApi.Transactions.Models;
 
-namespace MinimalApi.Handlers;
+namespace MinimalApi.Transactions.Handlers;
 
-class TransactionHandler
+static class TransactionHandler
 {
-
-    public static async Task<IResult> GetAllTransactions([FromQuery(Name = "page")] int page, RepositoryContext context)
+    public static async Task<IResult> GetAllTransactions([FromQuery(Name = "page")] int page, MinimalContext context)
     {
         return TypedResults.Ok(await context.Transactions
             .Select(t => TransactionItemDto.From(t))
             .ToListAsync());
     }
 
-    public static async Task<IResult> GetIncomeTransactions(RepositoryContext context)
+    public static async Task<IResult> GetIncomeTransactions(MinimalContext context)
     {
         return TypedResults.Ok(await context.Transactions
             .Where(t => t.TransactionType == TransactionType.Income)
@@ -25,7 +24,7 @@ class TransactionHandler
             .ToListAsync());
     }
 
-    public static async Task<IResult> GetOutcomeTransactions(RepositoryContext context)
+    public static async Task<IResult> GetOutcomeTransactions(MinimalContext context)
     {
         return TypedResults.Ok(await context.Transactions
             .Where(t => t.TransactionType == TransactionType.Outcome)
@@ -33,7 +32,7 @@ class TransactionHandler
             .ToListAsync());
     }
 
-    public static async Task<Results<Ok<TransactionItemDto>, NotFound>> GetTransaction(int id, RepositoryContext context)
+    public static async Task<Results<Ok<TransactionItemDto>, NotFound>> GetTransaction(int id, MinimalContext context)
     {
         var transaction = await context.Transactions.FindAsync(id);
         if (transaction is not null)
@@ -44,9 +43,9 @@ class TransactionHandler
         return TypedResults.NotFound();
     }
 
-    public static async Task<IResult> CreateTransaction(CreateTransactionDto transactionDto, RepositoryContext context)
+    public static async Task<IResult> CreateTransaction(CreateTransactionDto transactionDto, MinimalContext context)
     {
-        var transactionItem = new Models.Transaction
+        var transactionItem = new Transaction
         {
             Summary = transactionDto.Summary,
             Amount = transactionDto.Amount,
@@ -60,7 +59,7 @@ class TransactionHandler
         return TypedResults.Created(location, transactionItem);
     }
 
-    public static async Task<IResult> UpdateTransaction(int id, UpdateTransactionDto updateTransactionDto, RepositoryContext context)
+    public static async Task<IResult> UpdateTransaction(int id, UpdateTransactionDto updateTransactionDto, MinimalContext context)
     {
         var transaction = await context.Transactions.FindAsync(id);
         if (transaction is null)
@@ -76,7 +75,7 @@ class TransactionHandler
     }
 
 
-    public static async Task<IResult> DeleteTransaction(int id, RepositoryContext context)
+    public static async Task<IResult> DeleteTransaction(int id, MinimalContext context)
     {
         if (await context.Transactions.FindAsync(id) is Transaction transaction)
         {
@@ -88,5 +87,4 @@ class TransactionHandler
 
         return TypedResults.NotFound();
     }
-
 }
