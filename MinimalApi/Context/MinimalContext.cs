@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using MinimalApi.Models;
+using MinimalApi.Transactions.Models;
 
 namespace MinimalApi.Context;
 
-class RepositoryContext(DbContextOptions<RepositoryContext> options) : DbContext(options)
+class MinimalContext(DbContextOptions<MinimalContext> options) : DbContext(options)
 {
     public DbSet<Transaction> Transactions => Set<Transaction>();
 }

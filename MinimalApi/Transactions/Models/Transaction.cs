@@ -1,4 +1,4 @@
-﻿namespace MinimalApi.Models;
+﻿namespace MinimalApi.Transactions.Models;
 
 public class Transaction
 {

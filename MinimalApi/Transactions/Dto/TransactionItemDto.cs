@@ -1,6 +1,6 @@
-﻿using MinimalApi.Models;
+﻿using MinimalApi.Transactions.Models;
 
-namespace MinimalApi.Dto;
+namespace MinimalApi.Transactions.Dto;
 
 public record TransactionItemDto
 {
