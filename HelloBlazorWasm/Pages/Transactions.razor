@@ -1,0 +1,39 @@
+﻿@page "/transactions"
+@using HelloBlazorWasm.Services
+
+@inject NavigationManager Navigation
+@inject TransactionService TransactionService
+
+<PageTitle>Transactions</PageTitle>
+
+<h1>Transactions</h1>
+<button class="btn btn-primary" @onclick="GoToCreatePage">Create Transaction</button>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Type</th>
+            <th>Created at</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var transaction in TransactionService.Transactions)
+    {
+        <tr @key="@transaction.Id">
+            <td>@transaction.Description</td>
+            <td>@transaction.Amount</td>
+            <td>@transaction.Type</td>
+            <td>@transaction.CreatedAt</td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@code {
+    private void GoToCreatePage()
+    {
+        Navigation.NavigateTo("create-transaction");
+    }
+}

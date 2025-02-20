@@ -1,0 +1,72 @@
+@page "/create-transaction"
+@using HelloBlazorWasm.Models
+@using HelloBlazorWasm.Services
+
+
+@inject NavigationManager Navigation
+@inject ILogger<CreateTransaction> Logger
+@inject TransactionService TransactionService
+
+<PageTitle>Create a new transaction</PageTitle>
+
+<h3>Create a new transaction</h3>
+
+<div class="card">
+    <form method="post" @onsubmit="Submit">
+        <AntiforgeryToken />
+        <div class="card-body">
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <InputText id="description" class="form-control" @bind-Value="Model.Description"/>
+            </div>
+            <div class="mb-3">
+                <label for="type" class="form-label">Type</label>
+                <InputSelect class="form-select" id="type" @bind-Value="Model.SelectedType">
+                    <option value="@TransactionType.None">
+                        Select type...
+                    </option>
+                    <option value="@TransactionType.Income">Income</option>
+                    <option value="@TransactionType.Outcome">Outcome</option>
+                </InputSelect>
+            </div>
+            <div class="mb-3">
+                <label for="amount" class="form-label">Amount</label>
+                <InputNumber class="form-control" id="amount" @bind-Value="Model.Amount"></InputNumber>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">Create Transaction</button>
+        </div>
+
+    </form>
+</div>
+
+
+
+@code {
+
+    [SupplyParameterFromForm]
+    private TransactionViewModel Model { get; set; } = new();
+
+    private void Submit()
+    {
+        TransactionService.AddTransaction(new Transaction()
+        {
+            Amount = Model.Amount,
+            Description = Model.Description,
+            Type = Model.SelectedType,
+            CreatedAt = DateTime.Now
+        });
+        
+        Navigation.NavigateTo("transactions");
+    }
+
+    private class TransactionViewModel
+    {
+        public string? Id { get; set; }
+        public string Description { get; set; } = string.Empty;
+        public decimal Amount { get; set; } = 0;
+        public TransactionType SelectedType { get; set; } = TransactionType.None;
+    } 
+}
